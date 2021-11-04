@@ -69,5 +69,4 @@
     <orderEntry type="library" name="Gradle: org.assertj:assertj-core:3.11.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.easytesting:fest-util:1.2.5" level="project" />
   </component>
-  <component name="TestModuleProperties" production-module="Sorting_Tool.Topics-Floating-point_types-Distance.main" />
 </module>

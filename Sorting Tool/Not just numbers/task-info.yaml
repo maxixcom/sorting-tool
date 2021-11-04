@@ -388,6 +388,72 @@ files:
         return CheckResult(true)
     }
   learner_created: false
+- name: src/sorting/console/ConsoleRunner.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/entity/StatLong.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/usecase/BuildStatLong.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/interactor/BuildStatLongImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/gateway/StatLongGatewayImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/console/Application.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/console/service/StatService.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/console/service/StatServiceImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/console/dto/StatLongDto.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/entity/StatLines.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/entity/StatWords.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/gateway/StatGateway.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/usecase/BuildStatLines.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/usecase/BuildStatWords.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/interactor/BuildStatLinesImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/interactor/BuildStatWordsImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/gateway/StatLinesGatewayImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/gateway/StatWordsGatewayImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/console/dto/StatLinesDto.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/console/dto/StatWordsDto.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/console/StatType.kt
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/106/stages/575/implement#comment
-status: Unchecked
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Thu, 04 Nov 2021 08:23:03 UTC
 record: -1
