@@ -4,9 +4,12 @@ import java.util.Scanner
 
 class ConsoleRunner(args: Array<String>) : Runnable {
     private val statService = Application.statService
+    private val sortService = Application.sortService
     private val statType: StatType
+    private val sortingMode: Boolean
 
     init {
+        this.sortingMode = args.indexOf("-sortIntegers") != -1
         val argDataTypeIndex = args.indexOf("-dataType")
         this.statType = if (argDataTypeIndex != -1 && argDataTypeIndex + 1 < args.size) {
             when (args[argDataTypeIndex + 1]) {
@@ -27,6 +30,26 @@ class ConsoleRunner(args: Array<String>) : Runnable {
             input.add(s.nextLine())
         }
 
+        if (sortingMode) {
+            this.runSortIntegers(input)
+        } else {
+            runStat(input)
+        }
+    }
+
+    fun runSortIntegers(input: List<String>) {
+        sortService.sortIntegers(input).fold(
+            {
+                println("Total numbers: ${it.size}.")
+                println("Sorted data: ${it.joinToString(" ")}")
+            },
+            {
+                println("Error: ${it.message}")
+            }
+        )
+    }
+
+    fun runStat(input: List<String>) {
         when (statType) {
             StatType.Long -> {
                 statService.buildStatLong(input).fold(

@@ -9,519 +9,511 @@ files:
         // write your code here
     }
   learner_created: false
-- name: test/common/SortingToolStage3Test.kt
-  visible: false
+- name: src/sorting/console/dto/StatWordsDto.kt
+  visible: true
   text: |
-    package common
+    package sorting.console.dto
 
-    import org.hyperskill.hstest.stage.StageTest
-    import org.hyperskill.hstest.testcase.CheckResult
-    import org.hyperskill.hstest.testcase.TestCase
-    import org.hyperskill.hstest.testing.Settings
-    import java.util.*
-    import kotlin.math.roundToInt
+    import sorting.domain.entity.StatWords
 
-    class SortingToolStage3Test : StageTest<SortingToolClue>() {
+    class StatWordsDto(
+        val totalCount: Int,
+        val longestWord: String,
+        val longestWordCount: Int,
+        val longestWordPercent: Int,
+    )
+
+    fun StatWords.toStatWordsDto() =
+        StatWordsDto(
+            totalCount = totalCount,
+            longestWord = longestWord,
+            longestWordCount = longestWordCount,
+            longestWordPercent = if (totalCount > 0) longestWordCount * 100 / totalCount else 0
+        )
+  learner_created: true
+- name: src/sorting/console/dto/StatLongDto.kt
+  visible: true
+  text: |
+    package sorting.console.dto
+
+    import sorting.domain.entity.StatLong
+
+    data class StatLongDto(
+        val totalCount: Int,
+        val maxLong: Long,
+        val maxCount: Int,
+        val maxPercent: Int,
+    )
+
+    fun StatLong.toStatLongDto() =
+        StatLongDto(
+            totalCount = totalCount,
+            maxLong = maxLong,
+            maxCount = maxCount,
+            maxPercent = if (totalCount > 0) maxCount * 100 / totalCount else 0
+        )
+  learner_created: true
+- name: src/sorting/domain/entity/StatLines.kt
+  visible: true
+  text: |+
+    package sorting.domain.entity
+
+    data class StatLines(
+        val totalCount: Int,
+        val longestLine: String,
+        val longestLineCount: Int,
+    )
+
+  learner_created: true
+- name: src/sorting/domain/gateway/StatGateway.kt
+  visible: true
+  text: |
+    package sorting.domain.gateway
+
+    interface StatGateway<T> {
+        fun buildStat(input: List<String>): T
+    }
+  learner_created: true
+- name: src/sorting/domain/entity/StatWords.kt
+  visible: true
+  text: |
+    package sorting.domain.entity
+
+    data class StatWords(
+        val totalCount: Int,
+        val longestWord: String,
+        val longestWordCount: Int,
+    )
+  learner_created: true
+- name: src/sorting/domain/usecase/BuildStatLong.kt
+  visible: true
+  text: |
+    package sorting.domain.usecase
+
+    import sorting.domain.entity.StatLong
+
+    interface BuildStatLong {
+        fun execute(request: Request): Response
+        data class Request(val input: List<String>)
+        data class Response(val result: Result<StatLong>)
+    }
+  learner_created: true
+- name: src/sorting/console/service/StatServiceImpl.kt
+  visible: true
+  text: |
+    package sorting.console.service
+
+    import sorting.console.dto.StatLinesDto
+    import sorting.console.dto.StatLongDto
+    import sorting.console.dto.StatWordsDto
+    import sorting.console.dto.toStatLinesDto
+    import sorting.console.dto.toStatLongDto
+    import sorting.console.dto.toStatWordsDto
+    import sorting.domain.usecase.BuildStatLines
+    import sorting.domain.usecase.BuildStatLong
+    import sorting.domain.usecase.BuildStatWords
+
+    class StatServiceImpl(
+        private val useCaseBuildStatLong: BuildStatLong,
+        private val useCaseBuildStatLines: BuildStatLines,
+        private val useCaseBuildStatWords: BuildStatWords
+    ) : StatService {
+        override fun buildStatLong(lines: List<String>): Result<StatLongDto> {
+            return runCatching {
+                val request = BuildStatLong.Request(
+                    input = lines
+                )
+                useCaseBuildStatLong.execute(request).result.getOrThrow().toStatLongDto()
+            }
+        }
+
+        override fun buildStatLines(lines: List<String>): Result<StatLinesDto> {
+            return runCatching {
+                val request = BuildStatLines.Request(
+                    input = lines
+                )
+                useCaseBuildStatLines.execute(request).result.getOrThrow().toStatLinesDto()
+            }
+        }
+
+        override fun buildStatWords(lines: List<String>): Result<StatWordsDto> {
+            return runCatching {
+                val request = BuildStatWords.Request(
+                    input = lines
+                )
+                useCaseBuildStatWords.execute(request).result.getOrThrow().toStatWordsDto()
+            }
+        }
+    }
+  learner_created: true
+- name: src/sorting/application/gateway/StatLongGatewayImpl.kt
+  visible: true
+  text: |
+    package sorting.application.gateway
+
+    import sorting.domain.entity.StatLong
+    import sorting.domain.gateway.StatGateway
+
+    class StatLongGatewayImpl : StatGateway<StatLong> {
+        override fun buildStat(input: List<String>): StatLong {
+            val regex = "-?\\d+".toRegex()
+
+            val numbers = input
+                .flatMap {
+                    regex.findAll(it)
+                        .map { m ->
+                            m.groups[0]!!.value.toLong()
+                        }
+                        .toList()
+                }
+
+            val index = numbers
+                .groupingBy { it }
+                .fold(0) { acc, _ -> acc + 1 }
+
+            val max = index.keys.maxOrNull()
+
+            return StatLong(
+                totalCount = numbers.size,
+                maxLong = index.keys.maxOrNull() ?: 0L,
+                maxCount = index[max] ?: 0
+            )
+        }
+    }
+  learner_created: true
+- name: src/sorting/domain/usecase/BuildStatWords.kt
+  visible: true
+  text: |
+    package sorting.domain.usecase
+
+    import sorting.domain.entity.StatWords
+
+    interface BuildStatWords {
+        fun execute(request: Request): Response
+        data class Request(val input: List<String>)
+        data class Response(val result: Result<StatWords>)
+    }
+  learner_created: true
+- name: src/sorting/console/StatType.kt
+  visible: true
+  text: |
+    package sorting.console
+
+    enum class StatType(val arg: String) {
+        Long("long"),
+        Lines("line"),
+        Words("word"),
+    }
+  learner_created: true
+- name: src/sorting/domain/entity/StatLong.kt
+  visible: true
+  text: |
+    package sorting.domain.entity
+
+    data class StatLong(
+        val totalCount: Int,
+        val maxLong: Long,
+        val maxCount: Int,
+    )
+  learner_created: true
+- name: src/sorting/application/interactor/BuildStatWordsImpl.kt
+  visible: true
+  text: |
+    package sorting.application.interactor
+
+    import sorting.domain.entity.StatWords
+    import sorting.domain.gateway.StatGateway
+    import sorting.domain.usecase.BuildStatWords
+
+    class BuildStatWordsImpl(
+        private val statGateway: StatGateway<StatWords>
+    ) : BuildStatWords {
+        override fun execute(request: BuildStatWords.Request): BuildStatWords.Response {
+            val result = runCatching {
+                statGateway.buildStat(request.input)
+            }
+            return BuildStatWords.Response(result)
+        }
+    }
+  learner_created: true
+- name: src/sorting/application/interactor/BuildStatLongImpl.kt
+  visible: true
+  text: |
+    package sorting.domain.usecase
+
+    import sorting.domain.entity.StatLong
+    import sorting.domain.gateway.StatGateway
+
+    class BuildStatLongImpl(
+        private val statGateway: StatGateway<StatLong>
+    ) : BuildStatLong {
+        override fun execute(request: BuildStatLong.Request): BuildStatLong.Response {
+            val result = runCatching {
+                statGateway.buildStat(request.input)
+            }
+            return BuildStatLong.Response(result)
+        }
+    }
+  learner_created: true
+- name: src/sorting/application/gateway/StatWordsGatewayImpl.kt
+  visible: true
+  text: |
+    package sorting.application.gateway
+
+    import sorting.domain.entity.StatWords
+    import sorting.domain.gateway.StatGateway
+
+    class StatWordsGatewayImpl : StatGateway<StatWords> {
+        override fun buildStat(input: List<String>): StatWords {
+            val words = input
+                .flatMap {
+                    it.split("\\s+".toRegex())
+                }
+            val index = words
+                .groupingBy { it }
+                .fold(0) { acc, _ -> acc + 1 }
+
+            val longestWord = index.keys.maxByOrNull { it.length }
+
+            return StatWords(
+                totalCount = words.size,
+                longestWord = longestWord ?: "",
+                longestWordCount = index[longestWord] ?: 0
+            )
+        }
+    }
+  learner_created: true
+- name: src/sorting/console/dto/StatLinesDto.kt
+  visible: true
+  text: |
+    package sorting.console.dto
+
+    import sorting.domain.entity.StatLines
+
+    class StatLinesDto(
+        val totalCount: Int,
+        val longestLine: String,
+        val longestLineCount: Int,
+        val longestLinePercent: Int,
+    )
+
+    fun StatLines.toStatLinesDto() =
+        StatLinesDto(
+            totalCount = totalCount,
+            longestLine = longestLine,
+            longestLineCount = longestLineCount,
+            longestLinePercent = if (totalCount > 0) longestLineCount * 100 / totalCount else 0
+        )
+  learner_created: true
+- name: src/sorting/application/gateway/StatLinesGatewayImpl.kt
+  visible: true
+  text: |
+    package sorting.application.gateway
+
+    import sorting.domain.entity.StatLines
+    import sorting.domain.gateway.StatGateway
+
+    class StatLinesGatewayImpl : StatGateway<StatLines> {
+        override fun buildStat(input: List<String>): StatLines {
+            val index = input
+                .groupingBy { it }
+                .fold(0) { acc, _ -> acc + 1 }
+
+            val longestLine = index.keys.maxByOrNull { it.length }
+
+            return StatLines(
+                totalCount = input.size,
+                longestLine = longestLine ?: "",
+                longestLineCount = index[longestLine] ?: 0
+            )
+        }
+    }
+  learner_created: true
+- name: src/sorting/console/ConsoleRunner.kt
+  visible: true
+  text: |
+    package sorting.console
+
+    import java.util.Scanner
+
+    class ConsoleRunner(args: Array<String>) : Runnable {
+        private val statService = Application.statService
+        private val statType: StatType
 
         init {
-            Settings.allowOutOfInput = true
+            val argDataTypeIndex = args.indexOf("-dataType")
+            this.statType = if (argDataTypeIndex != -1 && argDataTypeIndex + 1 < args.size) {
+                when (args[argDataTypeIndex + 1]) {
+                    StatType.Lines.arg -> StatType.Lines
+                    StatType.Long.arg -> StatType.Long
+                    else -> StatType.Words
+                }
+            } else {
+                StatType.Words
+            }
         }
 
-        override fun generate(): List<TestCase<SortingToolClue>> {
-            return stage1Tests() + stage2Tests() + stage3Tests()
-        }
+        override fun run() {
 
-        override fun check(reply: String, clue: SortingToolClue): CheckResult {
-            return when {
-                "-sortIntegers" in clue.args -> checkNatural(
-                    parseLongTokens(clue.consoleInput),
-                    ::parseLongTokens,
-                    clue,
-                    reply
-                )
+            val s = Scanner(System.`in`)
+            val input = mutableListOf<String>()
+            while (s.hasNext()) {
+                input.add(s.nextLine())
+            }
 
-                "long" in clue.args -> checkForLong(clue, reply)
-                "word" in clue.args -> checkForWord(clue, reply)
-                "line" in clue.args -> checkForLine(clue, reply)
-
-                else -> throw IllegalArgumentException("Bad test: no data type found")
+            when (statType) {
+                StatType.Long -> {
+                    statService.buildStatLong(input).fold(
+                        { stat ->
+                            println("Total numbers: ${stat.totalCount}.")
+                            println("The greatest number: ${stat.maxLong} (${stat.maxCount} time(s), ${stat.maxPercent}%).")
+                        },
+                        {
+                            println("Error: ${it.message}")
+                        }
+                    )
+                }
+                StatType.Lines -> {
+                    statService.buildStatLines(input).fold(
+                        { stat ->
+                            println("Total lines: ${stat.totalCount}.")
+                            println("The longest line:")
+                            println("${stat.longestLine}")
+                            println("(${stat.longestLineCount} time(s), ${stat.longestLinePercent}%).")
+                        },
+                        {
+                            println("Error: ${it.message}")
+                        }
+                    )
+                }
+                StatType.Words -> {
+                    statService.buildStatWords(input).fold(
+                        { stat ->
+                            println("Total words: ${stat.totalCount}.")
+                            println("The longest word: ${stat.longestWord} (${stat.longestWordCount} time(s), ${stat.longestWordPercent}%).")
+                        },
+                        {
+                            println("Error: ${it.message}")
+                        }
+                    )
+                }
             }
         }
     }
+  learner_created: true
+- name: src/sorting/console/Application.kt
+  visible: true
+  text: |
+    package sorting.console
 
-    fun stage1Tests(): List<TestCase<SortingToolClue>> {
-        return listOf(
-            createTest(
-                """
-                    |1 -2   33 4
-                    |42
-                    |1                 1
-                    """.trimMargin(),
-                true
-            ),
-            createTest("1 2 2 3 4 5 5", true),
-            createTest("1 1 2 2 3 4 4 4", false)
+    import sorting.application.gateway.StatLongGatewayImpl
+    import sorting.application.interactor.BuildStatLinesImpl
+    import sorting.application.interactor.BuildStatWordsImpl
+    import sorting.console.service.StatService
+    import sorting.console.service.StatServiceImpl
+    import sorting.domain.entity.StatLines
+    import sorting.domain.entity.StatLong
+    import sorting.domain.entity.StatWords
+    import sorting.domain.gateway.StatGateway
+    import sorting.application.gateway.StatLinesGatewayImpl
+    import sorting.application.gateway.StatWordsGatewayImpl
+    import sorting.domain.usecase.BuildStatLines
+    import sorting.domain.usecase.BuildStatLong
+    import sorting.domain.usecase.BuildStatLongImpl
+    import sorting.domain.usecase.BuildStatWords
+
+    object Application {
+        private val statLongGateway: StatGateway<StatLong> = StatLongGatewayImpl()
+        private val statLinesGateway: StatGateway<StatLines> = StatLinesGatewayImpl()
+        private val statWordsGateway: StatGateway<StatWords> = StatWordsGatewayImpl()
+        private val useCaseBuildStatLong: BuildStatLong = BuildStatLongImpl(
+            statGateway = statLongGateway
+        )
+        private val useCaseBuildStatLines: BuildStatLines = BuildStatLinesImpl(
+            statGateway = statLinesGateway
+        )
+        private val useCaseBuildStatWords: BuildStatWords = BuildStatWordsImpl(
+            statGateway = statWordsGateway
+        )
+        val statService: StatService = StatServiceImpl(
+            useCaseBuildStatLong = useCaseBuildStatLong,
+            useCaseBuildStatLines = useCaseBuildStatLines,
+            useCaseBuildStatWords = useCaseBuildStatWords
         )
     }
+  learner_created: true
+- name: src/sorting/application/interactor/BuildStatLinesImpl.kt
+  visible: true
+  text: |
+    package sorting.application.interactor
 
+    import sorting.domain.entity.StatLines
+    import sorting.domain.gateway.StatGateway
+    import sorting.domain.usecase.BuildStatLines
 
-    fun stage2Tests(): List<TestCase<SortingToolClue>> {
-        return listOf(
-            createTest(
-                """
-                    |1 -2   333 4
-                    |42
-                    |1                 1
-                    """.trimMargin(),
-                true,
-                "-dataType", "word"
-            ),
-            createTest(
-                """abcc de a""".trimMargin(),
-                false,
-                "-dataType", "word"
-            ),
-            createTest(
-                """
-                    |1 -2   333 4
-                    |42
-                    |1                 1
-                    """.trimMargin(),
-                true,
-                "-dataType", "line"
-            ),
-            createTest(
-                """
-                    |1111
-                    |22222
-                    |3
-                    |44
-                    """.trimMargin(),
-                false,
-                "-dataType", "line"
-            )
-        )
+    class BuildStatLinesImpl(
+        private val statGateway: StatGateway<StatLines>
+    ) : BuildStatLines {
+        override fun execute(request: BuildStatLines.Request): BuildStatLines.Response {
+            val result = runCatching {
+                statGateway.buildStat(request.input)
+            }
+            return BuildStatLines.Response(result)
+        }
     }
+  learner_created: true
+- name: src/sorting/console/service/StatService.kt
+  visible: true
+  text: |
+    package sorting.console.service
 
+    import sorting.console.dto.StatLinesDto
+    import sorting.console.dto.StatLongDto
+    import sorting.console.dto.StatWordsDto
 
-    fun stage3Tests(): List<TestCase<SortingToolClue>> {
-        return listOf(
-            createTest(
-                """
-                    |1 -2   333 4
-                    |42
-                    |1                 1
-                    """.trimMargin(),
-                true,
-                "-dataType", "word", "-sortIntegers"
-            ),
-            createTest(
-                """
-                    |1 -2   333 4
-                    |42
-                    |1                 1
-                    """.trimMargin(),
-                true,
-                "-sortIntegers"
-            ),
-            createTest(
-                """
-                    |1111
-                    |22222
-                    |3
-                    |44
-                    """.trimMargin(),
-                false,
-                "-sortIntegers", "-dataType", "line"
-            )
-        )
+    interface StatService {
+        fun buildStatLong(lines: List<String>): Result<StatLongDto>
+        fun buildStatLines(lines: List<String>): Result<StatLinesDto>
+        fun buildStatWords(lines: List<String>): Result<StatWordsDto>
     }
+  learner_created: true
+- name: src/sorting/domain/usecase/BuildStatLines.kt
+  visible: true
+  text: |
+    package sorting.domain.usecase
 
+    import sorting.domain.entity.StatLines
 
-
-    fun revealRawTest(clue: SortingToolClue, reply: String): String {
-        return with(clue) { "Args:\n${args.joinToString(" ")}\nInput:\n$consoleInput\nYour output:\n$reply\n\n" }
+    interface BuildStatLines {
+        fun execute(request: Request): Response
+        data class Request(val input: List<String>)
+        data class Response(val result: Result<StatLines>)
     }
-
-    class SortingToolClue(val consoleInput: String, val revealTest: Boolean, val args: List<String>)
-
-    fun createTest(
-        consoleInput: String,
-        revealTest: Boolean,
-        vararg args: String = arrayOf("-dataType", "long")
-    ): TestCase<SortingToolClue> {
-        return TestCase<SortingToolClue>()
-            .setAttach(SortingToolClue(consoleInput, revealTest, args.toList()))
-            .setInput(consoleInput)
-            .addArguments(*args)
-    }
-
-    fun checkForLong(clue: SortingToolClue, reply_: String): CheckResult {
-        val reply = reply_.trim()
-        val regex = """(\d+)\D+(\d+)\D+(\d+)""".toRegex()
-        val matchResult = regex.find(reply)
-        if (matchResult == null) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Can't parse your output. Please check if your output contains three numbers\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Can't parse your output.")
-            }
-        }
-
-        val (totalNumbers, greatestNumber, greatestNumberCount) = matchResult.groupValues.drop(1).map { it.toInt() }
-
-        val scanner = Scanner(clue.consoleInput)
-
-        val actualNumbers = mutableListOf<Int>()
-
-        while (scanner.hasNextInt()) {
-            actualNumbers.add(scanner.nextInt())
-        }
-
-        val actualTotal = actualNumbers.size
-
-        if (actualTotal != totalNumbers) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Total numbers ($totalNumbers) are incorrect. Expected: $actualTotal.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Total numbers are incorrect.")
-            }
-        }
-
-        val actualMax = actualNumbers.maxOrNull()
-
-        if (actualMax != greatestNumber) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Greatest number ($greatestNumber) is incorrect. Expected: $actualMax.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Greatest number is incorrect.")
-            }
-        }
-
-        val actualMaxCount = actualNumbers.count { it == actualMax }
-
-        if (actualMaxCount != greatestNumberCount) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Greatest number times ($greatestNumberCount) are incorrect. Expected: $actualMaxCount.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Greatest number times are incorrect.")
-            }
-        }
-
-        return CheckResult(true)
-    }
-
-    fun checkForWord(clue: SortingToolClue, reply_: String): CheckResult {
-        val reply = reply_.trim()
-        val regex = """(\d+)\D+: (.+) \(\D*(\d+)\D+(\d+)\D*\)""".toRegex()
-        val matchResult = regex.find(reply)
-        if (matchResult == null) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Can't parse your output.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Can't parse your output.")
-            }
-        }
-
-        val totalWords = matchResult.groupValues[1].toInt()
-        val word = matchResult.groupValues[2]
-        val longestWordCount = matchResult.groupValues[3].toInt()
-        val longestWordPercentage = matchResult.groupValues[4].toInt()
-
-        val scanner = Scanner(clue.consoleInput)
-
-        val actualWords = mutableListOf<String>()
-
-        while (scanner.hasNext()) {
-            actualWords.add(scanner.next())
-        }
-
-        val actualTotal = actualWords.size
-
-        if (actualTotal != totalWords) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Total words ($totalWords) are incorrect. Expected: $actualTotal.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Total words are incorrect.")
-            }
-        }
-
-        val actualMax = actualWords.maxByOrNull { it.length }
-
-        if (actualMax != word) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Longest word ($word) is incorrect. Expected: $actualMax.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Longest word is incorrect.")
-            }
-        }
-
-        val actualMaxCount = actualWords.count { it == actualMax }
-
-        if (actualMaxCount != longestWordCount) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Longest word times ($longestWordCount) are incorrect. Expected: $actualMaxCount.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Longest word times are incorrect.")
-            }
-        }
-
-        val actualPercentage = (actualMaxCount * 100.0 / actualTotal).roundToInt()
-
-        if (actualPercentage != longestWordPercentage) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Percentage ($longestWordPercentage) is incorrect. Expected: $actualPercentage.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Percentage is incorrect.")
-            }
-        }
-
-        return CheckResult(true)
-    }
-
-    fun checkForLine(clue: SortingToolClue, reply_: String): CheckResult {
-        val reply = reply_.trim()
-        val lines = reply.lines()
-
-        if (lines.size != 4) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Can't parse your output: expected 4 lines.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Can't parse your output: expected 4 lines.")
-            }
-        }
-
-        val totalRegex = """(\d+)""".toRegex()
-        val totalMatchResult = totalRegex.find(lines[0])
-        if (totalMatchResult == null) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Can't find number in the first line of your output.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Can't find number in the first line of your output.")
-            }
-        }
-
-        val totalLines = totalMatchResult.groupValues[1].toInt()
-        val line = lines[2]
-
-        val countRegex = """(\d+)\D+(\d+)""".toRegex()
-        val countMatchResult = countRegex.find(lines[3])
-        if (countMatchResult == null) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Can't find two numbers in the last line of your output.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Can't find two numbers in the last line of your output.")
-            }
-        }
-
-        val longestWordCount = countMatchResult.groupValues[1].toInt()
-        val longestWordPercentage = countMatchResult.groupValues[2].toInt()
-
-        val actualLines = clue.consoleInput.lines()
-
-        val actualTotal = actualLines.size
-
-        if (actualTotal != totalLines) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Total lines ($totalLines) are incorrect. Expected: $actualTotal.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Total lines are incorrect.")
-            }
-        }
-
-        val actualMax = actualLines.maxByOrNull { it.length }
-
-        if (actualMax != line) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Longest line ($line) is incorrect. Expected: $actualMax.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Longest line is incorrect.")
-            }
-        }
-
-        val actualMaxCount = actualLines.count { it == actualMax }
-
-        if (actualMaxCount != longestWordCount) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Longest line times ($longestWordCount) are incorrect. Expected: $actualMaxCount.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Longest line times are incorrect.")
-            }
-        }
-
-        val actualPercentage = (actualMaxCount * 100.0 / actualTotal).roundToInt()
-
-        if (actualPercentage != longestWordPercentage) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Percentage ($longestWordPercentage) is incorrect. Expected: $actualPercentage.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Percentage is incorrect.")
-            }
-        }
-
-        return CheckResult(true)
-    }
-
-    fun parseLongTokens(input: String): List<Int> {
-        val scanner = Scanner(input)
-
-        val longTokens = mutableListOf<Int>()
-
-        while (scanner.hasNextInt()) {
-            longTokens.add(scanner.nextInt())
-        }
-
-        return longTokens
-    }
-
-    fun <TokenType : Comparable<TokenType>> checkNatural(
-        actualTokens: List<TokenType>,
-        sortedTokensParser: (String) -> List<TokenType>,
-        clue: SortingToolClue,
-        reply_: String
-    ): CheckResult {
-        val reply = reply_.trim()
-        val lines = reply.lines()
-
-        if (lines.size != 2) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Can't parse your output: expected 2 lines.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Can't parse your output: expected 2 lines.")
-            }
-        }
-
-        val totalRegex = """(\d+)""".toRegex()
-        val totalMatchResult = totalRegex.find(lines[0])
-        if (totalMatchResult == null) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Can't find number in the first line of your output.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Can't find number in the first line of your output.")
-            }
-        }
-
-        val totalTokens = totalMatchResult.groupValues[1].toInt()
-
-        val actualTotal = actualTokens.size
-
-        if (actualTotal != totalTokens) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Total tokens ($totalTokens) are incorrect. Expected: $actualTotal.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Total tokens are incorrect.")
-            }
-        }
-
-        val sortedActualTokens = actualTokens.sorted()
-
-        val sortedTokens = sortedTokensParser(lines[1].substringAfter(":").dropWhile { it in setOf('\n', '\r') })
-
-        val total = sortedTokens.size
-
-        if (actualTotal != total) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Total sorted tokens ($total) are incorrect. Expected: $actualTotal.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Total sorted tokens are incorrect.")
-            }
-        }
-
-        if (sortedActualTokens != sortedTokens) {
-            return if (clue.revealTest) {
-                CheckResult(
-                    false,
-                    "Sorted tokens are incorrect.\n" +
-                        revealRawTest(clue, reply)
-                )
-            } else {
-                CheckResult(false, "Sorted tokens are incorrect.")
-            }
-        }
-
-        return CheckResult(true)
-    }
-  learner_created: false
+  learner_created: true
+- name: test/common/SortingToolStage2Test.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/usecase/SortIntegers.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/interactor/SortIntegersImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/gateway/SortIntegersGateway.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/gateway/SortIntegersGatewayImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/console/service/SortService.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/console/service/SortServiceImpl.kt
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/106/stages/576/implement#comment
-status: Unchecked
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Thu, 04 Nov 2021 18:17:39 UTC
 record: -1
