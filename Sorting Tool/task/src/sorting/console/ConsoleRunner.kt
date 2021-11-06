@@ -1,7 +1,11 @@
 package sorting.console
 
+import sorting.console.io.Printer
+import sorting.console.io.PrinterFile
+import sorting.console.io.PrinterStdout
 import sorting.domain.entity.SortBy
 import sorting.domain.entity.StatItem
+import java.io.File
 import java.util.Scanner
 
 class ConsoleRunner(
@@ -10,40 +14,72 @@ class ConsoleRunner(
     private val sortService = Application.sortService
     private lateinit var dataType: DataType
     private lateinit var sortBy: SortBy
+    private lateinit var printer: Printer
+    private lateinit var inputFile: File
+
+    private fun parseInputFile(args: Array<String>) {
+        val index = args.indexOf("-inputFile")
+        if (index != -1) {
+            if (index + 1 >= args.size) {
+                throw Exception("No input file provided!")
+            }
+            inputFile = File(args[index + 1])
+        }
+    }
+
+    private fun parseOutputFile(args: Array<String>) {
+        val index = args.indexOf("-outputFile")
+        printer = if (index != -1) {
+            if (index + 1 >= args.size) {
+                throw Exception("No output file provided!")
+            }
+            PrinterFile(File(args[index + 1]))
+        } else {
+            PrinterStdout()
+        }
+    }
 
     private fun parseSortingType(args: Array<String>) {
         val index = args.indexOf("-sortingType")
-        if (index != -1) {
+        sortBy = if (index != -1) {
             if (index + 1 >= args.size) {
-                println("No sorting type defined!")
-                return
+                throw Exception("No sorting type defined!")
             }
-            sortBy = when (args[index + 1]) {
+            when (args[index + 1]) {
                 "byCount" -> SortBy.ByCount
                 else -> SortBy.Natural
             }
+        } else {
+            SortBy.Natural
         }
     }
 
     private fun parseDataType(args: Array<String>) {
         val index = args.indexOf("-dataType")
-        if (index != -1) {
+        dataType = if (index != -1) {
             if (index + 1 >= args.size) {
-                println("No data type defined!")
-                return
+                throw Exception("No data type defined!")
             }
-            dataType = when (args[index + 1]) {
+            when (args[index + 1]) {
                 DataType.Lines.arg -> DataType.Lines
                 DataType.Long.arg -> DataType.Long
                 else -> DataType.Words
             }
+        } else {
+            DataType.Words
         }
     }
 
     private fun parseUnknownOptions(args: Array<String>) {
+        val options = listOf(
+            "-dataType",
+            "-sortingType",
+            "-inputFile",
+            "-outputFile",
+        )
         args
             .filter { it.indexOf("-") != -1 }
-            .filter { it != "-dataType" && it != "-sortingType" }
+            .filter { it !in options }
             .forEach {
                 println("\"$it\" is not a valid parameter. It will be skipped.")
             }
@@ -54,19 +90,22 @@ class ConsoleRunner(
             parseSortingType(args)
             parseDataType(args)
             parseUnknownOptions(args)
-            if (!this::dataType.isInitialized) {
-                this.dataType = DataType.Words
-            }
-            if (!this::sortBy.isInitialized) {
-                this.sortBy = SortBy.Natural
-            }
+            parseInputFile(args)
+            parseOutputFile(args)
         } catch (e: Exception) {
+            println(e.message)
             return
         }
-        val s = Scanner(System.`in`)
-        val input = mutableListOf<String>()
-        while (s.hasNext()) {
-            input.add(s.nextLine())
+
+        val input = if (this::inputFile.isInitialized) {
+            this.inputFile.readLines()
+        } else {
+            val s = Scanner(System.`in`)
+            val tmp = mutableListOf<String>()
+            while (s.hasNext()) {
+                tmp.add(s.nextLine())
+            }
+            tmp
         }
 
         when (dataType) {
@@ -81,12 +120,12 @@ class ConsoleRunner(
         if (sortBy == SortBy.ByCount)
             result.fold(
                 { printSortedByCountResult("number", it) },
-                { println(it.message) }
+                { printer.println(it.message) }
             )
         else {
             result.fold(
                 { printSortedByNaturalResult("number", " ", it) },
-                { println(it.message) }
+                { printer.println(it.message) }
             )
         }
     }
@@ -96,12 +135,12 @@ class ConsoleRunner(
         if (sortBy == SortBy.ByCount)
             result.fold(
                 { printSortedByCountResult("word", it) },
-                { println(it.message) }
+                { printer.println(it.message) }
             )
         else {
             result.fold(
                 { printSortedByNaturalResult("word", " ", it) },
-                { println(it.message) }
+                { printer.println(it.message) }
             )
         }
     }
@@ -111,12 +150,12 @@ class ConsoleRunner(
         if (sortBy == SortBy.ByCount)
             result.fold(
                 { printSortedByCountResult("line", it) },
-                { println(it.message) }
+                { printer.println(it.message) }
             )
         else {
             result.fold(
                 { printSortedByNaturalResult("line", "\n", it) },
-                { println(it.message) }
+                { printer.println(it.message) }
             )
         }
     }
@@ -133,12 +172,12 @@ class ConsoleRunner(
             entry.key to entry.value.map { it.value }.sortedBy { it }
         }.toMap()
 
-        println("Total ${title}s: $total.")
+        printer.println("Total ${title}s: $total.")
 
         invertedIndex.keys.sortedBy { it }
             .forEach { count ->
                 invertedIndex[count]!!.forEach {
-                    println("$it: $count time(s), ${count * 100 / total}%")
+                    printer.println("$it: $count time(s), ${count * 100 / total}%")
                 }
             }
     }
@@ -152,7 +191,7 @@ class ConsoleRunner(
         val items = list.flatMap { statItem ->
             List(statItem.count) { statItem.value }
         }
-        println("Total ${title}s: $total.")
-        println("Sorted data: ${items.joinToString(separator)}")
+        printer.println("Total ${title}s: $total.")
+        printer.println("Sorted data: ${items.joinToString(separator)}")
     }
 }

@@ -839,9 +839,18 @@ files:
         Words("word"),
     }
   learner_created: true
+- name: src/sorting/console/io/Printer.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/console/io/PrinterStdout.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/console/io/PrinterFile.kt
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/106/stages/578/implement#comment
 status: Solved
 feedback:
   message: Congratulations!
   time: Sat, 06 Nov 2021 15:00:09 UTC
-record: -1
+record: 5

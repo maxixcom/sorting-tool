@@ -194,7 +194,7 @@ files:
         data class Response(val result: Result<StatWords>)
     }
   learner_created: true
-- name: src/sorting/console/DataType.kt
+- name: src/sorting/console/StatType.kt
   visible: true
   text: |
     package sorting.console
