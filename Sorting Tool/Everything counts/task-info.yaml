@@ -31,7 +31,7 @@ files:
             longestWordPercent = if (totalCount > 0) longestWordCount * 100 / totalCount else 0
         )
   learner_created: true
-- name: src/sorting/console/StatType.kt
+- name: src/sorting/console/DataType.kt
   visible: true
   text: |
     package sorting.console

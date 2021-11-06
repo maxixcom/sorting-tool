@@ -8,14 +8,19 @@ class SortGatewayImpl : SortGateway {
     override fun sortLongs(input: List<String>, sortBy: SortBy): List<StatItem<Long>> {
         val regex = "-?\\d+".toRegex()
 
-        val numbers = input
-            .flatMap {
-                regex.findAll(it)
-                    .map { m ->
-                        m.groups[0]!!.value.toLong()
+        val numbers = input.flatMap { line ->
+            line.trim().split("\\s+".toRegex())
+                .filter {
+                    if (regex.matches(it)) {
+                        true
+                    } else {
+                        println("\"$it\" is not a valid parameter. It will be skipped.")
+                        false
                     }
-                    .toList()
-            }
+                }
+                .map(String::toLong)
+        }
+
         return sortItems(numbers, sortBy)
     }
 

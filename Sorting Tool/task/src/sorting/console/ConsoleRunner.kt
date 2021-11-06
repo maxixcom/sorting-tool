@@ -4,49 +4,75 @@ import sorting.domain.entity.SortBy
 import sorting.domain.entity.StatItem
 import java.util.Scanner
 
-class ConsoleRunner(args: Array<String>) : Runnable {
+class ConsoleRunner(
+    private val args: Array<String>
+) : Runnable {
     private val sortService = Application.sortService
-    private lateinit var statType: StatType
+    private lateinit var dataType: DataType
     private lateinit var sortBy: SortBy
 
-    init {
-        parseArguments(args)
-    }
-
-    private fun parseArguments(args: Array<String>) {
-        val argSortingTypeIndex = args.indexOf("-sortingType")
-        this.sortBy = if (argSortingTypeIndex != -1 && argSortingTypeIndex + 1 < args.size) {
-            when (args[argSortingTypeIndex + 1]) {
+    private fun parseSortingType(args: Array<String>) {
+        val index = args.indexOf("-sortingType")
+        if (index != -1) {
+            if (index + 1 >= args.size) {
+                println("No sorting type defined!")
+                return
+            }
+            sortBy = when (args[index + 1]) {
                 "byCount" -> SortBy.ByCount
                 else -> SortBy.Natural
             }
-        } else {
-            SortBy.Natural
-        }
-        val argDataTypeIndex = args.indexOf("-dataType")
-        this.statType = if (argDataTypeIndex != -1 && argDataTypeIndex + 1 < args.size) {
-            when (args[argDataTypeIndex + 1]) {
-                StatType.Lines.arg -> StatType.Lines
-                StatType.Long.arg -> StatType.Long
-                else -> StatType.Words
-            }
-        } else {
-            StatType.Words
         }
     }
 
-    override fun run() {
+    private fun parseDataType(args: Array<String>) {
+        val index = args.indexOf("-dataType")
+        if (index != -1) {
+            if (index + 1 >= args.size) {
+                println("No data type defined!")
+                return
+            }
+            dataType = when (args[index + 1]) {
+                DataType.Lines.arg -> DataType.Lines
+                DataType.Long.arg -> DataType.Long
+                else -> DataType.Words
+            }
+        }
+    }
 
+    private fun parseUnknownOptions(args: Array<String>) {
+        args
+            .filter { it.indexOf("-") != -1 }
+            .filter { it != "-dataType" && it != "-sortingType" }
+            .forEach {
+                println("\"$it\" is not a valid parameter. It will be skipped.")
+            }
+    }
+
+    override fun run() {
+        try {
+            parseSortingType(args)
+            parseDataType(args)
+            parseUnknownOptions(args)
+            if (!this::dataType.isInitialized) {
+                this.dataType = DataType.Words
+            }
+            if (!this::sortBy.isInitialized) {
+                this.sortBy = SortBy.Natural
+            }
+        } catch (e: Exception) {
+            return
+        }
         val s = Scanner(System.`in`)
         val input = mutableListOf<String>()
         while (s.hasNext()) {
             input.add(s.nextLine())
         }
 
-        when (statType) {
-            StatType.Long -> this.runSortLongs(input)
-            StatType.Lines -> this.runSortLines(input)
-            StatType.Words -> this.runSortWords(input)
+        when (dataType) {
+            DataType.Long -> this.runSortLongs(input)
+            DataType.Lines -> this.runSortLines(input)
+            DataType.Words -> this.runSortWords(input)
         }
     }
 

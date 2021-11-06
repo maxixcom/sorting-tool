@@ -1,6 +1,6 @@
 package sorting.console
 
-enum class StatType(val arg: String) {
+enum class DataType(val arg: String) {
     Long("long"),
     Lines("line"),
     Words("word"),
