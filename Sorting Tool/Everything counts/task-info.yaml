@@ -9,6 +9,261 @@ files:
         // write your code here
     }
   learner_created: false
+- name: src/sorting/console/dto/StatWordsDto.kt
+  visible: true
+  text: |
+    package sorting.console.dto
+
+    import sorting.domain.entity.StatWords
+
+    class StatWordsDto(
+        val totalCount: Int,
+        val longestWord: String,
+        val longestWordCount: Int,
+        val longestWordPercent: Int,
+    )
+
+    fun StatWords.toStatWordsDto() =
+        StatWordsDto(
+            totalCount = totalCount,
+            longestWord = longestWord,
+            longestWordCount = longestWordCount,
+            longestWordPercent = if (totalCount > 0) longestWordCount * 100 / totalCount else 0
+        )
+  learner_created: true
+- name: src/sorting/console/StatType.kt
+  visible: true
+  text: |
+    package sorting.console
+
+    enum class StatType(val arg: String) {
+        Long("long"),
+        Lines("line"),
+        Words("word"),
+    }
+  learner_created: true
+- name: src/sorting/console/service/SortService.kt
+  visible: true
+  text: |
+    package sorting.console.service
+
+    interface SortService {
+        fun sortIntegers(lines: List<String>): Result<List<Int>>
+    }
+  learner_created: true
+- name: src/sorting/console/Application.kt
+  visible: true
+  text: |
+    package sorting.console
+
+    import sorting.application.gateway.StatLinesGatewayImpl
+    import sorting.application.gateway.StatLongGatewayImpl
+    import sorting.application.gateway.StatWordsGatewayImpl
+    import sorting.application.interactor.BuildStatLinesImpl
+    import sorting.application.interactor.BuildStatWordsImpl
+    import sorting.application.interactor.SortIntegersImpl
+    import sorting.console.service.SortService
+    import sorting.console.service.SortServiceImpl
+    import sorting.console.service.StatService
+    import sorting.console.service.StatServiceImpl
+    import sorting.domain.entity.StatLines
+    import sorting.domain.entity.StatLong
+    import sorting.domain.entity.StatWords
+    import sorting.domain.gateway.SortIntegersGateway
+    import sorting.application.gateway.SortIntegersGatewayImpl
+    import sorting.domain.gateway.StatGateway
+    import sorting.domain.usecase.BuildStatLines
+    import sorting.domain.usecase.BuildStatLong
+    import sorting.domain.usecase.BuildStatLongImpl
+    import sorting.domain.usecase.BuildStatWords
+    import sorting.domain.usecase.SortIntegers
+
+    object Application {
+        private val statLongGateway: StatGateway<StatLong> = StatLongGatewayImpl()
+        private val statLinesGateway: StatGateway<StatLines> = StatLinesGatewayImpl()
+        private val statWordsGateway: StatGateway<StatWords> = StatWordsGatewayImpl()
+        private val sortIntegersGateway: SortIntegersGateway = SortIntegersGatewayImpl()
+
+        private val useCaseBuildStatLong: BuildStatLong = BuildStatLongImpl(
+            statGateway = statLongGateway
+        )
+        private val useCaseBuildStatLines: BuildStatLines = BuildStatLinesImpl(
+            statGateway = statLinesGateway
+        )
+        private val useCaseBuildStatWords: BuildStatWords = BuildStatWordsImpl(
+            statGateway = statWordsGateway
+        )
+
+        private val useCaseSortIntegers: SortIntegers = SortIntegersImpl(
+            gateway = sortIntegersGateway
+        )
+
+        val statService: StatService = StatServiceImpl(
+            useCaseBuildStatLong = useCaseBuildStatLong,
+            useCaseBuildStatLines = useCaseBuildStatLines,
+            useCaseBuildStatWords = useCaseBuildStatWords
+        )
+
+        val sortService: SortService = SortServiceImpl(
+            useCaseSortIntegers = useCaseSortIntegers
+        )
+    }
+  learner_created: true
+- name: src/sorting/console/service/SortServiceImpl.kt
+  visible: true
+  text: |
+    package sorting.console.service
+
+    import sorting.domain.usecase.SortIntegers
+
+    class SortServiceImpl(
+        private val useCaseSortIntegers: SortIntegers
+    ) : SortService {
+        override fun sortIntegers(lines: List<String>): Result<List<Int>> {
+            val request = SortIntegers.Request(lines)
+            return useCaseSortIntegers.execute(request).result
+        }
+    }
+  learner_created: true
+- name: src/sorting/console/dto/StatLongDto.kt
+  visible: true
+  text: |
+    package sorting.console.dto
+
+    import sorting.domain.entity.StatLong
+
+    data class StatLongDto(
+        val totalCount: Int,
+        val maxLong: Long,
+        val maxCount: Int,
+        val maxPercent: Int,
+    )
+
+    fun StatLong.toStatLongDto() =
+        StatLongDto(
+            totalCount = totalCount,
+            maxLong = maxLong,
+            maxCount = maxCount,
+            maxPercent = if (totalCount > 0) maxCount * 100 / totalCount else 0
+        )
+  learner_created: true
+- name: src/sorting/console/dto/StatLinesDto.kt
+  visible: true
+  text: |
+    package sorting.console.dto
+
+    import sorting.domain.entity.StatLines
+
+    class StatLinesDto(
+        val totalCount: Int,
+        val longestLine: String,
+        val longestLineCount: Int,
+        val longestLinePercent: Int,
+    )
+
+    fun StatLines.toStatLinesDto() =
+        StatLinesDto(
+            totalCount = totalCount,
+            longestLine = longestLine,
+            longestLineCount = longestLineCount,
+            longestLinePercent = if (totalCount > 0) longestLineCount * 100 / totalCount else 0
+        )
+  learner_created: true
+- name: src/sorting/console/ConsoleRunner.kt
+  visible: true
+  text: |
+    package sorting.console
+
+    import java.util.Scanner
+
+    class ConsoleRunner(args: Array<String>) : Runnable {
+        private val statService = Application.statService
+        private val sortService = Application.sortService
+        private val statType: StatType
+        private val sortingMode: Boolean
+
+        init {
+            this.sortingMode = args.indexOf("-sortIntegers") != -1
+            val argDataTypeIndex = args.indexOf("-dataType")
+            this.statType = if (argDataTypeIndex != -1 && argDataTypeIndex + 1 < args.size) {
+                when (args[argDataTypeIndex + 1]) {
+                    StatType.Lines.arg -> StatType.Lines
+                    StatType.Long.arg -> StatType.Long
+                    else -> StatType.Words
+                }
+            } else {
+                StatType.Words
+            }
+        }
+
+        override fun run() {
+
+            val s = Scanner(System.`in`)
+            val input = mutableListOf<String>()
+            while (s.hasNext()) {
+                input.add(s.nextLine())
+            }
+
+            if (sortingMode) {
+                this.runSortIntegers(input)
+            } else {
+                runStat(input)
+            }
+        }
+
+        fun runSortIntegers(input: List<String>) {
+            sortService.sortIntegers(input).fold(
+                {
+                    println("Total numbers: ${it.size}.")
+                    println("Sorted data: ${it.joinToString(" ")}")
+                },
+                {
+                    println("Error: ${it.message}")
+                }
+            )
+        }
+
+        fun runStat(input: List<String>) {
+            when (statType) {
+                StatType.Long -> {
+                    statService.buildStatLong(input).fold(
+                        { stat ->
+                            println("Total numbers: ${stat.totalCount}.")
+                            println("The greatest number: ${stat.maxLong} (${stat.maxCount} time(s), ${stat.maxPercent}%).")
+                        },
+                        {
+                            println("Error: ${it.message}")
+                        }
+                    )
+                }
+                StatType.Lines -> {
+                    statService.buildStatLines(input).fold(
+                        { stat ->
+                            println("Total lines: ${stat.totalCount}.")
+                            println("The longest line:")
+                            println("${stat.longestLine}")
+                            println("(${stat.longestLineCount} time(s), ${stat.longestLinePercent}%).")
+                        },
+                        {
+                            println("Error: ${it.message}")
+                        }
+                    )
+                }
+                StatType.Words -> {
+                    statService.buildStatWords(input).fold(
+                        { stat ->
+                            println("Total words: ${stat.totalCount}.")
+                            println("The longest word: ${stat.longestWord} (${stat.longestWordCount} time(s), ${stat.longestWordPercent}%).")
+                        },
+                        {
+                            println("Error: ${it.message}")
+                        }
+                    )
+                }
+            }
+        }
+    }
+  learner_created: true
 - name: test/common/SortingToolStage4Test.kt
   visible: false
   text: |+
@@ -356,6 +611,39 @@ files:
 
 
   learner_created: false
+- name: src/sorting/domain/entity/StatItem.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/usecase/SortLong.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/entity/SortBy.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/gateway/SortGateway.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/usecase/SortWords.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/domain/usecase/SortLines.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/interactor/SortLinesImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/interactor/SortLongImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/interactor/SortWordsImpl.kt
+  visible: true
+  learner_created: true
+- name: src/sorting/application/gateway/SortGatewayImpl.kt
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/106/stages/577/implement#comment
-status: Unchecked
-record: -1
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Sat, 06 Nov 2021 11:43:06 UTC
+record: 4
